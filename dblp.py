@@ -41,15 +41,17 @@ def sample_parser(sample_tag, sample_number, file_name):
     baum = ET.ElementTree(root)
     counter = 0
     for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
-        while (counter < sample_number):
-            if event == "start":
+        if event == "start":
+            if (counter < sample_number):
+                counter += 1
                 parent = ET.SubElement(root, elem.tag, elem.attrib)
                 for child in elem:
                     c = ET.SubElement(parent, child.tag, child.attrib)
                     c.text = child.text
 
-            counter += 1
-        break
+        if (counter == sample_number):
+            break
+
 
     if not os.path.exists(output_folder):
         # creates output folder if it doesnt exist
