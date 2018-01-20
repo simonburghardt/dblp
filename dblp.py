@@ -1,8 +1,10 @@
 import lxml.etree as ET
+import os
 
 file_path = "input/dplp-2017-05-02.xml"
+output_folder = 'output/'
 
-# Teilaufgabe 1 - 1.)
+# Parses xml file via iterparse and counts number of inproceedings, proceedings and journals
 def parsertest():
     inproceedings = 0
     proceedings = 0
@@ -33,5 +35,32 @@ def parsertest():
     print("Journals: " + str(journals))
 
 
-parsertest()
+# Takes a XML Tag and a number and parses the given number into valid xml
+def sample_parser(sample_tag, sample_number, file_name):
+    root = ET.Element("dplp")
+    baum = ET.ElementTree(root)
+    counter = 0
+    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
+        while (counter < sample_number):
+            if event == "start":
+                parent = ET.SubElement(root, elem.tag, elem.attrib)
+                for child in elem:
+                    c = ET.SubElement(parent, child.tag, child.attrib)
+                    c.text = child.text
+
+            counter += 1
+        break
+
+    if not os.path.exists(output_folder):
+        # creates output folder if it doesnt exist
+        os.makedirs(output_folder)
+    baum.write(output_folder + file_name)
+
+
+# Teilaufgabe 1 - 1.)
+# parsertest()
+
+# Teilaufgabe 1 - 2.)
+# sample_parser("inproceedings", 3, "sample_inproceedings.xml")
+# sample_parser("proceedings", 3, "sample_proceedings.xml")
 
