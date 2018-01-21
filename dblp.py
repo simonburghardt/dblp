@@ -1,5 +1,6 @@
 import lxml.etree as ET
 import os
+import json
 
 file_path = "input/dplp-2017-05-02.xml"
 output_folder = 'output/'
@@ -42,6 +43,7 @@ def sample_parser(sample_tag, sample_number, file_name):
     counter = 0
     for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
         if event == "start":
+            # creates xml tree structure
             if (counter < sample_number):
                 counter += 1
                 parent = ET.SubElement(root, elem.tag, elem.attrib)
@@ -49,14 +51,56 @@ def sample_parser(sample_tag, sample_number, file_name):
                     c = ET.SubElement(parent, child.tag, child.attrib)
                     c.text = child.text
 
+        # breaks the loop when sample number is reached
         if (counter == sample_number):
             break
 
+    # creates output folder if it doesnt exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
+    # saves tree structure into xml file
+    baum.write(output_folder + file_name)
+
+
+# Takes xml by tags (param: sample_tag) and parses into dictionary for a given sample number (param: sample_number)
+# returns list of dictionaries
+def xml_to_dict(sample_tag, sample_number):
+    result = []
+    counter = 0
+    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
+        if event == "start":
+            # parses xml data into dictionary
+            if (counter < sample_number):
+                counter += 1
+                d = {}
+                d["key"] = elem.attrib["key"]
+                d["mdate"] = elem.attrib["mdate"]
+                list = []
+                for child in elem:
+                    # author and editor can be multiple entrys and are safed in a list
+                    if (child.tag == "author" or child.tag == "editor"):
+                        list.append(child.text)
+                        d[child.tag] = list
+                    else:
+                        d[child.tag] = child.text
+            # appends entry dictionary into result list
+            result.append(d)
+
+        # breaks the loop when sample number is reached
+        if (counter == sample_number):
+            break
+
+    return result
+
+
+# Takes dictionary (param: parsed_data) and saves in json file (name = param: file_name)
+def dict_to_json(parsed_data, file_name):
     if not os.path.exists(output_folder):
         # creates output folder if it doesnt exist
         os.makedirs(output_folder)
-    baum.write(output_folder + file_name)
+    fh = open(output_folder + file_name, mode="w", encoding="utf8")
+    json.dump(parsed_data, fh, indent=4)
 
 
 # Teilaufgabe 1 - 1.)
@@ -65,4 +109,11 @@ def sample_parser(sample_tag, sample_number, file_name):
 # Teilaufgabe 1 - 2.)
 # sample_parser("inproceedings", 3, "sample_inproceedings.xml")
 # sample_parser("proceedings", 3, "sample_proceedings.xml")
+
+# Teilaufgabe 1 - 3.)
+# inproc_dict = xml_to_dict("inproceedings" , 3)
+# dict_to_json(inproc_dict, "sample_inproceedings.json")
+
+# proc_dict = xml_to_dict("proceedings", 3)
+# dict_to_json(proc_dict, "sample_proceedings.json")
 
