@@ -1,6 +1,13 @@
 import lxml.etree as ET
 import os
 import json
+from blitzdb import Document, FileBackend
+
+class inproceedings(Document):
+    pass
+
+class proceedings(Document):
+    pass
 
 file_path = "input/dplp-2017-05-02.xml"
 output_folder = 'output/'
@@ -51,6 +58,8 @@ def sample_parser(sample_tag, sample_number, file_name):
                     c = ET.SubElement(parent, child.tag, child.attrib)
                     c.text = child.text
 
+        if event == "end" and len(list(elem)) > 0:
+            elem.clear()
         # breaks the loop when sample number is reached
         if (counter == sample_number):
             break
@@ -83,10 +92,14 @@ def xml_to_dict(sample_tag, sample_number):
                         list.append(child.text)
                         d[child.tag] = list
                     else:
-                        d[child.tag] = child.text
+                        if (child.text.isnumeric()):
+                            d[child.tag] = int(child.text)
+                        else:
+                            d[child.tag] = child.text
             # appends entry dictionary into result list
             result.append(d)
-
+        if event == "end" and len(list(elem)) > 0:
+            elem.clear()
         # breaks the loop when sample number is reached
         if (counter == sample_number):
             break
@@ -103,6 +116,41 @@ def dict_to_json(parsed_data, file_name):
     json.dump(parsed_data, fh, indent=4)
 
 
+def xml_to_blitzdb(tag, tag_class):
+    for event, elem in ET.iterparse(file_path, tag=tag, events=("start", "end"), load_dtd=True):
+        if event == "start":
+            # parses xml data into dictionary
+            d = {}
+            d["key"] = elem.attrib["key"]
+            d["mdate"] = elem.attrib["mdate"]
+            list = []
+            for child in elem:
+                # author and editor can be multiple entrys and are safed in a list
+                if (child.tag == "author" or child.tag == "editor"):
+                    list.append(child.text)
+                    d[child.tag] = list
+                else:
+                    try:
+                        if (child.text.isnumeric()):
+                            d[child.tag] = int(child.text)
+                        else:
+                            d[child.tag] = child.text
+                    except:
+                        pass
+            if event == "end" and len(list(elem)) > 0:
+                elem.clear()
+
+        try:
+            if (d["year"] == 1980):
+                tag = tag_class(d)
+                backend = FileBackend(".my-db")
+                backend.save(tag)
+                backend.commit()
+        except:
+            pass
+
+
+
 # Teilaufgabe 1 - 1.)
 # parsertest()
 
@@ -113,6 +161,9 @@ def dict_to_json(parsed_data, file_name):
 # Teilaufgabe 1 - 3.)
 # inproc_dict = xml_to_dict("inproceedings" , 3)
 # dict_to_json(inproc_dict, "sample_inproceedings.json")
+
+# Teilaufgabe 2 - 1.)
+# xml_to_blitzdb("inproceedings", inproceedings)
 
 # proc_dict = xml_to_dict("proceedings", 3)
 # dict_to_json(proc_dict, "sample_proceedings.json")
