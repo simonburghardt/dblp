@@ -3,14 +3,18 @@ import os
 import json
 from blitzdb import Document, FileBackend
 
-class inproceedings(Document):
+
+class Inproceedings(Document):
     pass
 
-class proceedings(Document):
+
+class Proceedings(Document):
     pass
+
 
 file_path = "input/dplp-2017-05-02.xml"
 output_folder = 'output/'
+
 
 # Parses xml file via iterparse and counts number of inproceedings, proceedings and journals
 def parsertest():
@@ -126,12 +130,12 @@ def xml_to_blitzdb(tag, tag_class):
             list = []
             for child in elem:
                 # author and editor can be multiple entrys and are safed in a list
-                if (child.tag == "author" or child.tag == "editor"):
+                if child.tag == "author" or child.tag == "editor":
                     list.append(child.text)
                     d[child.tag] = list
                 else:
                     try:
-                        if (child.text.isnumeric()):
+                        if child.text.isnumeric():
                             d[child.tag] = int(child.text)
                         else:
                             d[child.tag] = child.text
@@ -141,7 +145,7 @@ def xml_to_blitzdb(tag, tag_class):
                 elem.clear()
 
         try:
-            if (d["year"] == 1980):
+            if d["year"] == 1980:
                 tag = tag_class(d)
                 backend = FileBackend(".my-db")
                 backend.save(tag)
