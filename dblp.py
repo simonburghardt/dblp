@@ -149,7 +149,6 @@ def dict_to_json(parsed_data, file_name):
     json.dump(parsed_data, fh, indent=4)
 
 
-
 def inproceeding_to_dict(tag, jahr):
 
     inproceedings = []
@@ -186,4 +185,6 @@ def list_to_blitzdb(list, obj_class):
 # inproc_dict = xml_to_dict("inproceedings" , 3)
 # dict_to_json(inproc_dict, "sample_inproceedings.json")
 
-
+# Teilaufgabe 2 - 1.)
+list = inproceeding_to_dict("inproceeding", "1980")
+list_to_blitzdb(list, Inproceedings)
