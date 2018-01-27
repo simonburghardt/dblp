@@ -1,6 +1,7 @@
 import lxml.etree as ET
 import os
 import json
+import errno
 from blitzdb import Document, FileBackend
 
 
@@ -173,16 +174,90 @@ def list_to_blitzdb(list, obj_class):
 
 
 # Teilaufgabe 1 - 1.)
-# parsertest()
+def exercise1_1():
+    parsertest()
+
 
 # Teilaufgabe 1 - 2.)
-# sample_parser("inproceedings", 3, "sample_inproceedings.xml")
-# sample_parser("proceedings", 3, "sample_proceedings.xml")
+def exercise1_2():
+    sample_parser("inproceedings", 3, "sample_inproceedings.xml")
+    sample_parser("proceedings", 3, "sample_proceedings.xml")
 
 # Teilaufgabe 1 - 3.)
-# inproc_dict = xml_to_dict("inproceedings" , 3)
-# dict_to_json(inproc_dict, "sample_inproceedings.json")
+def exercise1_3():
+    inproc_dict = xml_to_dict("inproceedings", 3)
+    dict_to_json(inproc_dict, "sample_inproceedings.json")
+
 
 # Teilaufgabe 2 - 1.)
-list = inproceeding_to_dict("inproceeding", "1980")
-list_to_blitzdb(list, Inproceedings)
+def exercise2_1():
+    list = inproceeding_to_dict("inproceeding", "1980")
+    list_to_blitzdb(list, Inproceedings)
+
+
+# Teilaufgabe 2 - 2.)
+def exercise2_2():
+    return
+
+
+# Teilaufgabe 3 - 1.)
+def exercise3_1():
+    return
+
+
+# Teilaufgabe 3 - 1.)
+def exercise3_2():
+    return
+
+
+# Teilaufgabe 3 - 1.)
+def exercise3_3():
+    return
+
+
+def menu():
+    while True:
+        user_input = input('\t\t1 -> Teilaufgabe 1.1 \n\
+        2 -> Teilaufgabe 1.2 \n\
+        3 -> Teilaufgabe 1.2 \n\
+        4 -> Teilaufgabe 1.2 \n\
+        5 -> Teilaufgabe 1.2 \n\
+        6 -> Teilaufgabe 1.2 \n\
+        7 -> Teilaufgabe 1.2 \n\
+        8 -> Teilaufgabe 1.2 \n\
+        0 -> Programm beenden\n')
+        if user_input == '1':
+            exercise1_1()
+        elif user_input == '2':
+            exercise1_2()
+        elif user_input == '3':
+            exercise1_3()
+        elif user_input == '4':
+            exercise2_1()
+        elif user_input == '5':
+            exercise2_2()
+        elif user_input == '6':
+            exercise3_1()
+        elif user_input == '7':
+            exercise3_2()
+        elif user_input == '8':
+            exercise3_3()
+        elif user_input == '0':
+            exit()
+        else:
+            print('Ungügltige Eingabe')
+
+
+def init():
+    folders = ["/input", "output", "my-db"]
+    for path in folders:
+        directory = os.path.dirname(path)
+        try:
+            os.mkdir(directory)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+
+
+init()
+menu()
