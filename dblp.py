@@ -14,6 +14,7 @@ class Proceedings(Document):
 
 file_path = "input/dplp-2017-05-02.xml"
 output_folder = 'output/'
+db = FileBackend("./My-DB")
 
 
 # Parses xml file via iterparse and counts number of inproceedings, proceedings and journals
@@ -110,6 +111,34 @@ def xml_to_dict(sample_tag, sample_number):
 
     return result
 
+def xml_to_dict(sample_tag):
+    result = []
+    counter = 0
+    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
+        if event == "start":
+            # parses xml data into dictionary
+
+            counter += 1
+            d = {}
+            d["key"] = elem.attrib["key"]
+            d["mdate"] = elem.attrib["mdate"]
+            list = []
+            for child in elem:
+                # author and editor can be multiple entrys and are safed in a list
+                if (child.tag == "author" or child.tag == "editor"):
+                    list.append(child.text)
+                    d[child.tag] = list
+                else:
+                    if (child.text.isnumeric()):
+                        d[child.tag] = int(child.text)
+                    else:
+                        d[child.tag] = child.text
+            # appends entry dictionary into result list
+            result.append(d)
+        if event == "end" and len(list(elem)) > 0:
+            elem.clear()
+    return result
+
 
 # Takes dictionary (param: parsed_data) and saves in json file (name = param: file_name)
 def dict_to_json(parsed_data, file_name):
@@ -120,39 +149,30 @@ def dict_to_json(parsed_data, file_name):
     json.dump(parsed_data, fh, indent=4)
 
 
-def xml_to_blitzdb(tag, tag_class):
-    for event, elem in ET.iterparse(file_path, tag=tag, events=("start", "end"), load_dtd=True):
+
+def inproceeding_to_dict(tag, jahr):
+
+    inproceedings = []
+
+    for event, elem in ET.iterparse(file_path, tag=tag, events=("start"), load_dtd=True):
         if event == "start":
-            # parses xml data into dictionary
-            d = {}
-            d["key"] = elem.attrib["key"]
-            d["mdate"] = elem.attrib["mdate"]
-            list = []
-            for child in elem:
-                # author and editor can be multiple entrys and are safed in a list
-                if child.tag == "author" or child.tag == "editor":
-                    list.append(child.text)
-                    d[child.tag] = list
-                else:
-                    try:
-                        if child.text.isnumeric():
-                            d[child.tag] = int(child.text)
-                        else:
-                            d[child.tag] = child.text
-                    except:
-                        pass
+            if elem.find("year").text == jahr:
+                result = xml_to_dict(elem.tag)
+                inproceedings.append(result)
+
             if event == "end" and len(list(elem)) > 0:
                 elem.clear()
+                while elem.getprevious() is not None:
+                    del elem.getparent()[0]
 
-        try:
-            if d["year"] == 1980:
-                tag = tag_class(d)
-                backend = FileBackend(".my-db")
-                backend.save(tag)
-                backend.commit()
-        except:
-            pass
+    return inproceedings
 
+
+def list_to_blitzdb(list, obj_class):
+    for entry in list:
+        inp = obj_class(entry["inproceedings"])
+        db.save(inp)
+    db.commit()
 
 
 # Teilaufgabe 1 - 1.)
@@ -166,9 +186,4 @@ def xml_to_blitzdb(tag, tag_class):
 # inproc_dict = xml_to_dict("inproceedings" , 3)
 # dict_to_json(inproc_dict, "sample_inproceedings.json")
 
-# Teilaufgabe 2 - 1.)
-# xml_to_blitzdb("inproceedings", inproceedings)
-
-# proc_dict = xml_to_dict("proceedings", 3)
-# dict_to_json(proc_dict, "sample_proceedings.json")
 
