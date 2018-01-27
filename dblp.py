@@ -112,7 +112,6 @@ def xml_to_dict(sample_tag, sample_number):
     return result
 
 def xml_to_dict(sample_tag):
-    result = []
     counter = 0
     for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
         if event == "start":
@@ -134,10 +133,9 @@ def xml_to_dict(sample_tag):
                     else:
                         d[child.tag] = child.text
             # appends entry dictionary into result list
-            result.append(d)
         if event == "end" and len(list(elem)) > 0:
             elem.clear()
-    return result
+    return d
 
 
 # Takes dictionary (param: parsed_data) and saves in json file (name = param: file_name)
@@ -153,7 +151,7 @@ def inproceeding_to_dict(tag, jahr):
 
     inproceedings = []
 
-    for event, elem in ET.iterparse(file_path, tag=tag, events=("start"), load_dtd=True):
+    for event, elem in ET.iterparse(file_path, tag=tag, events=("start", "end"), load_dtd=True):
         if event == "start":
             if elem.find("year").text == jahr:
                 result = xml_to_dict(elem.tag)
