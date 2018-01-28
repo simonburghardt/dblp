@@ -13,7 +13,7 @@ class Proceedings(Document):
     pass
 
 
-file_path = "input/dplp-2017-05-02.xml"
+file_path = "input/dblp-2017-05-02.xml"
 output_folder = 'output/'
 db = FileBackend("./My-DB")
 
@@ -24,7 +24,8 @@ def parsertest():
     proceedings = 0
     journals = 0
 
-    for event, elem in ET.iterparse(file_path, events=("start", "end"), load_dtd=True):
+    for event, elem in ET.iterparse(file_path, events=("start", "end"), resolve_entities=True,
+                                    load_dtd=True, huge_tree=True, encoding='ISO-8859-1'):
         if elem.tag == "inproceedings":
             if event == "end" and len(list(elem)) > 0:
                 inproceedings += 1
@@ -54,7 +55,8 @@ def sample_parser(sample_tag, sample_number, file_name):
     root = ET.Element("dplp")
     baum = ET.ElementTree(root)
     counter = 0
-    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
+    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), huge_tree=True,
+                                    load_dtd=True, encoding='ISO-8859-1'):
         if event == "start":
             # creates xml tree structure
             if (counter < sample_number):
@@ -83,38 +85,41 @@ def sample_parser(sample_tag, sample_number, file_name):
 def xml_to_dict(sample_tag, sample_number):
     result = []
     counter = 0
-    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
+    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), huge_tree=True,
+                                    load_dtd=True, encoding='ISO-8859-1'):
         if event == "start":
             # parses xml data into dictionary
-            if (counter < sample_number):
+            if counter < sample_number:
                 counter += 1
-                d = {}
+                d={}
                 d["key"] = elem.attrib["key"]
                 d["mdate"] = elem.attrib["mdate"]
-                list = []
+                mylist = []
                 for child in elem:
-                    # author and editor can be multiple entrys and are safed in a list
-                    if (child.tag == "author" or child.tag == "editor"):
-                        list.append(child.text)
-                        d[child.tag] = list
+                    # author and editor can be multiple entrys and are safed in a mylist
+                    if child.tag == "author" or child.tag == "editor":
+                        mylist.append(child.text)
+                        d[child.tag] = mylist
                     else:
-                        if (child.text.isnumeric()):
+                        if child.text.isnumeric():
                             d[child.tag] = int(child.text)
                         else:
                             d[child.tag] = child.text
-            # appends entry dictionary into result list
+            # appends entry dictionary into result mylist
             result.append(d)
-        if event == "end" and len(list(elem)) > 0:
+        if event == "end" and len(mylist(elem)) > 0:
             elem.clear()
         # breaks the loop when sample number is reached
-        if (counter == sample_number):
+        if counter == sample_number:
             break
 
     return result
 
+
 def xml_to_dict(sample_tag):
     counter = 0
-    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True):
+    for event, elem in ET.iterparse(file_path, tag=sample_tag, events=("start", "end"), load_dtd=True,
+                                    huge_tree=True, encoding='ISO-8859-1'):
         if event == "start":
             # parses xml data into dictionary
 
@@ -125,11 +130,11 @@ def xml_to_dict(sample_tag):
             list = []
             for child in elem:
                 # author and editor can be multiple entrys and are safed in a list
-                if (child.tag == "author" or child.tag == "editor"):
+                if child.tag == "author" or child.tag == "editor":
                     list.append(child.text)
                     d[child.tag] = list
                 else:
-                    if (child.text.isnumeric()):
+                    if child.text.isnumeric():
                         d[child.tag] = int(child.text)
                     else:
                         d[child.tag] = child.text
@@ -152,7 +157,8 @@ def inproceeding_to_dict(tag, jahr):
 
     inproceedings = []
 
-    for event, elem in ET.iterparse(file_path, tag=tag, events=("start", "end"), load_dtd=True):
+    for event, elem in ET.iterparse(file_path, tag=tag, events=("start", "end"), load_dtd=True, huge_tree=True,
+                                    encoding='ISO-8859-1'):
         if event == "start":
             if elem.find("year").text == jahr:
                 result = xml_to_dict(elem.tag)
@@ -166,47 +172,78 @@ def inproceeding_to_dict(tag, jahr):
     return inproceedings
 
 
-def list_to_blitzdb(list, obj_class):
+def get_proceedings(file):
+    proceedings = []
+
+    for event, elem in ET.iterparse(file_path, events=("start", "end"), load_dtd=True, huge_tree=True,
+                                    encoding='ISO-8859-1'):
+        if elem.tag == "proceedings":
+            proceedings.append(xml_to_dict(elem))
+
+        while elem.getprevious() is not None:
+            del elem.getparent()[0]
+
+    return proceedings
+
+
+def list_to_blitzdb(list, db_class):
     for entry in list:
-        inp = obj_class(entry["inproceedings"])
+        inp = db_class(entry["inproceedings"])
         db.save(inp)
     db.commit()
 
 
 # Teilaufgabe 1 - 1.)
 def exercise1_1():
+
+    print('Exercise 1.1 starting - please wait')
     parsertest()
 
 
 # Teilaufgabe 1 - 2.)
 def exercise1_2():
+    print('Exercise 1.2 starting - please wait')
+
     sample_parser("inproceedings", 3, "sample_inproceedings.xml")
     sample_parser("proceedings", 3, "sample_proceedings.xml")
 
+
 # Teilaufgabe 1 - 3.)
 def exercise1_3():
+    print('Exercise 1.3 starting - please wait')
+
     inproc_dict = xml_to_dict("inproceedings", 3)
     dict_to_json(inproc_dict, "sample_inproceedings.json")
 
 
 # Teilaufgabe 2 - 1.)
 def exercise2_1():
-    list = inproceeding_to_dict("inproceeding", "1980")
-    list_to_blitzdb(list, Inproceedings)
+    print('Exercise 2.1 starting - please wait')
+
+    #list1 = inproceeding_to_dict("inproceeding", "1980")
+    list2 = get_proceedings(file_path)
+    #list_to_blitzdb(list1, Inproceedings)
+    list_to_blitzdb(list2, Proceedings)
 
 
 # Teilaufgabe 2 - 2.)
 def exercise2_2():
+    print('Exercise 2.2 starting - please wait')
+
     return
 
 
 # Teilaufgabe 3 - 1.)
 def exercise3_1():
+    print('Exercise 3.1 starting - please wait')
+
     return
 
 
-# Teilaufgabe 3 - 1.)
+# Teilaufgabe 3 - 2.)
 def exercise3_2():
+    print('Exercise 3.2 starting - please wait')
+
     return
 
 
@@ -217,30 +254,30 @@ def exercise3_3():
 
 def menu():
     while True:
-        user_input = input('\t\t1 -> Teilaufgabe 1.1 \n\
-        2 -> Teilaufgabe 1.2 \n\
-        3 -> Teilaufgabe 1.2 \n\
-        4 -> Teilaufgabe 1.2 \n\
-        5 -> Teilaufgabe 1.2 \n\
-        6 -> Teilaufgabe 1.2 \n\
-        7 -> Teilaufgabe 1.2 \n\
-        8 -> Teilaufgabe 1.2 \n\
+        user_input = input('\t\t1.1 -> Teilaufgabe 1.1 \n\
+        1.2 -> Teilaufgabe 1.2 \n\
+        1.3 -> Teilaufgabe 1.3 \n\
+        2.1 -> Teilaufgabe 2.1 \n\
+        2.2 -> Teilaufgabe 2.2 \n\
+        3.1 -> Teilaufgabe 3.1 \n\
+        3.2 -> Teilaufgabe 3.2 \n\
+        3.3 -> Teilaufgabe 3.3 \n\
         0 -> Programm beenden\n')
-        if user_input == '1':
+        if user_input == '1.1':
             exercise1_1()
-        elif user_input == '2':
+        elif user_input == '1.2':
             exercise1_2()
-        elif user_input == '3':
+        elif user_input == '1.3':
             exercise1_3()
-        elif user_input == '4':
+        elif user_input == '2.1':
             exercise2_1()
-        elif user_input == '5':
+        elif user_input == '2.2':
             exercise2_2()
-        elif user_input == '6':
+        elif user_input == '3.1':
             exercise3_1()
-        elif user_input == '7':
+        elif user_input == '3.2':
             exercise3_2()
-        elif user_input == '8':
+        elif user_input == '3.3':
             exercise3_3()
         elif user_input == '0':
             exit()
@@ -249,11 +286,10 @@ def menu():
 
 
 def init():
-    folders = ["/input", "output", "my-db"]
+    folders = ["input", "output", "my-db"]
     for path in folders:
-        directory = os.path.dirname(path)
         try:
-            os.mkdir(directory)
+            os.mkdir(path)
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
