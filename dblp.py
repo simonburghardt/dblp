@@ -192,6 +192,49 @@ def list_to_blitzdb(list, db_class):
         db.save(inp)
     db.commit()
 
+def add_crossref_to_inproceedings():
+    crossrefs = []
+    inproceedings = db.filter(Inproceedings, {})
+
+    # Abfragen aller nterschiedlichen crossrefs für umschreiben en masse
+    # Proceedings muss nur 55 statt 2000 mal durchsucht werden
+    for inproceeding in inproceedings:
+        try:
+            unique_crossref = inproceeding.crossref
+        except AttributeError:
+            continue
+        if unique_crossref not in crossrefs:
+            crossrefs.append(unique_crossref)
+
+    # Überprüfen ob ref existiert
+    for unique_crossref in crossrefs:
+        try:
+            ref_obj = db.get(Proceedings, {'key': unique_crossref})
+        except:
+            continue
+        if not ref_obj:
+            continue
+
+        # Wiederholungen in der alle Inproceeding der selben Refernz zugewiesen werden
+        for inproceeding in db.filter(Inproceedings, {'crossref': unique_crossref}):
+            print(unique_crossref)
+            # Alle Werte des Proceedings werden eingetrage, skip bei Primärschlüssel
+            for value in ref_obj:
+                if value == "pk":
+                    continue
+                inproceeding["proc2:" + value] = ref_obj[value]
+            print(inproceeding["proc2:title"])
+            inproceeding.save()
+            db.commit()
+
+
+
+
+
+
+
+
+
 
 # Teilaufgabe 1 - 1.)
 def exercise1_1():
@@ -229,6 +272,9 @@ def exercise2_1():
 # Teilaufgabe 2 - 2.)
 def exercise2_2():
     print('Exercise 2.2 starting - please wait')
+
+    add_crossref_to_inproceedings()
+
 
     return
 
@@ -296,4 +342,17 @@ def init():
 
 
 init()
-menu()
+# menu()
+
+
+inproceedings = db.filter(Inproceedings, {})
+
+# Abfragen aller nterschiedlichen crossrefs für umschreiben en masse
+# Proceedings muss nur 55 statt 2000 mal durchsucht werden
+exercise2_2()
+for inproceeding in inproceedings:
+    try:
+        crossref = inproceeding.crossref
+    except AttributeError:
+        continue
+    print(inproceeding["crossref"] +"\n" + inproceeding["proc:title"] +"\n" + inproceeding["proc2:title"])
