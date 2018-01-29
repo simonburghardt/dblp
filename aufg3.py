@@ -63,6 +63,7 @@ def find_data_by_page_count(pagecount):
     return result_list
 
 
+# counts for every author on how many inproceedings he is mentiones
 def count_author_inps():
 
     results = backend.filter(inproceedings, {})
@@ -71,16 +72,21 @@ def count_author_inps():
     for result in results:
         try:
             for author in result.author:
+                # checks if author is already in result_list
+                for ath in result_list:
+                    if ath["author"] == author:
+                        ath["count"] += 1
+                        break
 
-                for entry in result_list:
-                    if entry["author"] == author:
-                        entry["count"] += 1
-                
+                else:
+                    result_list.append({"author": author, "count": 1})
 
         except:
             pass
 
-
+    # sorts the list, most counts on top
+    result_list = sorted(result_list, key=lambda k: k['count'], reverse=True)
+    return result_list
 
 
 
@@ -93,3 +99,7 @@ save_header = ['author', 'title', 'pages', 'proc:editor', 'proc:title']
 # Aufgabe 3 - 2.)
 # page_data = find_data_by_page_count(10)
 # save_csv(page_data, save_header, "morethan10pages.csv")
+
+# Aufgabe 3 - 3.)
+# count_data = count_author_inps()
+# save_csv(count_data, ['author', 'count'], "author_count_sss.csv")
