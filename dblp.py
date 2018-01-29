@@ -2,6 +2,7 @@ import lxml.etree as ET
 import os
 import json
 import errno
+import csv
 from blitzdb import Document, FileBackend
 
 
@@ -217,25 +218,93 @@ def add_crossref_to_inproceedings():
 
         # Wiederholungen in der alle Inproceeding der selben Refernz zugewiesen werden
         for inproceeding in db.filter(Inproceedings, {'crossref': unique_crossref}):
-            print(unique_crossref)
             # Alle Werte des Proceedings werden eingetrage, skip bei Primärschlüssel
             for value in ref_obj:
                 if value == "pk":
                     continue
-                inproceeding["proc2:" + value] = ref_obj[value]
-            print(inproceeding["proc2:title"])
+                inproceeding["proc:" + value] = ref_obj[value]
             inproceeding.save()
             db.commit()
 
 
+# Takes data (list), takes a header-list and a filename, and saves the data into a csv-file
+def save_csv(save_data, save_header, filename):
+    with open(output_folder + filename, 'w+', encoding='windows-1252') as f:
+        writer = csv.DictWriter(f, save_header, delimiter=';', extrasaction='ignore', lineterminator='\n')
+        writer.writeheader()
+        writer.writerows(save_data)
+    print('Datensätze gespeichert!')
+
+
+# finds all inproceedings of a given editor
+def find_data_by_editor(editor):
+    results = db.filter(Inproceedings, {})
+    result_list = []
+
+    for result in results:
+        try:
+            if result["proc:editor"] == editor:
+                result_list.append(result)
+        except:
+            continue
+
+        # editors are often saved in a list
+        for inproceeding_editor in result["proc:editor"]:
+            if inproceeding_editor == editor:
+                result_list.append(result)
+
+
+    return result_list
+
+
+# finds all inproceedings bigger than a given pagecount
+def find_data_by_page_count(pagecount):
+    results = db.filter(Inproceedings, {})
+    result_list = []
+
+    for result in results:
+        try:
+            pages = result.pages
+
+            pages = pages.split('-')
+            if not len(pages) == 2:
+                continue
+
+            count = int(pages[1]) - int(pages[0]) + 1
+        except:
+            continue
+
+
+        if count > pagecount:
+            result_list.append(result)
+
+
+    return result_list
 
 
 
+# unfinished
+def count_author_inps():
+    results = db.filter(Inproceedings, {})
+    result_list = []
+
+    for result in results:
+        try:
+            for author in result.author:
+
+                for entry in result_list:
+                    if entry["author"] == author:
+                        entry["count"] += 1
 
 
+        except:
+            pass
 
 
+save_header = ['author', 'title', 'pages', 'proc:editor', 'proc:title']
 
+##############################################################################
+# Aufgaben Start
 # Teilaufgabe 1 - 1.)
 def exercise1_1():
 
@@ -276,21 +345,19 @@ def exercise2_2():
     add_crossref_to_inproceedings()
 
 
-    return
-
-
 # Teilaufgabe 3 - 1.)
 def exercise3_1():
     print('Exercise 3.1 starting - please wait')
 
-    return
+    data = find_data_by_editor("Michael L. Brodie")
+    save_csv(data, save_header, "exercise3_1.csv")
 
 
 # Teilaufgabe 3 - 2.)
 def exercise3_2():
     print('Exercise 3.2 starting - please wait')
-
-    return
+    page_data = find_data_by_page_count(10)
+    save_csv(page_data, save_header, "exercise3_2.csv")
 
 
 # Teilaufgabe 3 - 1.)
@@ -329,6 +396,7 @@ def menu():
             exit()
         else:
             print('Ungügltige Eingabe')
+        input("Fortsetzen?")
 
 
 def init():
@@ -342,17 +410,6 @@ def init():
 
 
 init()
-# menu()
+menu()
 
 
-inproceedings = db.filter(Inproceedings, {})
-
-# Abfragen aller nterschiedlichen crossrefs für umschreiben en masse
-# Proceedings muss nur 55 statt 2000 mal durchsucht werden
-exercise2_2()
-for inproceeding in inproceedings:
-    try:
-        crossref = inproceeding.crossref
-    except AttributeError:
-        continue
-    print(inproceeding["crossref"] +"\n" + inproceeding["proc:title"] +"\n" + inproceeding["proc2:title"])
